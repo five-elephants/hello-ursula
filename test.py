@@ -5,6 +5,8 @@ import time
 import numpy as np
 from blit import blit,load_png
 from life import *
+import os
+import s3_data
 
 
 def test_border():
@@ -64,10 +66,17 @@ def test_watch():
             time.sleep(0.05)
 
 def test_png():
+    s3_data.download_all_to('spool')
+
     scr = Screen()
     scr.clr()
-    img = load_png('test.png')
-    scr.image(img, ij, clock.color_map_watch)
+
+    for f in os.listdir('spool'):
+        if f.endswith('.png'):
+            print("Showing {}".format(f))
+            img = load_png(os.path.join('spool', f))
+            scr.image(img, ij, clock.color_map_watch)
+            time.sleep(4)
 
 def test_game_of_life():
     scr = Screen()
@@ -99,5 +108,5 @@ if __name__ == '__main__':
     #test_border()
     #test_image()
     #test_watch()
-    #test_png()
-    test_game_of_life()
+    test_png()
+    #test_game_of_life()

@@ -28,5 +28,19 @@ def load_png(filename, gamma=2.2):
             rgb / 12.92,
             ((rgb + 0.055) / (1.0 + 0.055)) ** 2.4)
 
+    # correct for relative luminosity
+    #lum_target = 400
+    #lum_red = 700
+    #lum_green = 1400
+    #lum_blue = 400
+
+    #lum_corrected = np.zeros(gamma_corrected.shape)
+    #lum_corrected[:,:,0] = np.clip(gamma_corrected[:,:,0] * (lum_target / lum_red), 0, 1.0)
+    #lum_corrected[:,:,1] = np.clip(gamma_corrected[:,:,1] * (lum_target / lum_green), 0, 1.0)
+    #lum_corrected[:,:,2] = np.clip(gamma_corrected[:,:,2] * (lum_target / lum_blue), 0, 1.0)
+
+    #return np.array(lum_corrected * 255.0, dtype=np.uint8)
+
     return np.array(gamma_corrected * 255.0, dtype=np.uint8)
+
 
