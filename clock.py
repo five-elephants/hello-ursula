@@ -45,7 +45,7 @@ def make_analog_clock_dither(t):
             ix = fx(x)
             iy = fy(y)
             d = max(0.0, 1.0 - math.sqrt((x - ix)**2 + (y - iy)**2))
-            val = face[int(ix), int(iy)] + np.array([0, 0, 255]) * d
+            val = face[int(ix), int(iy)] + np.array([255, 255, 0]) * d
             face[int(ix), int(iy)] = np.clip(val, 0, 255)
 
     # minute hand

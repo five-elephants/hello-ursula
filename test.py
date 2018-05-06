@@ -3,7 +3,7 @@ import clock
 import datetime
 import time
 import numpy as np
-from blit import blit,load_png
+from blit import blit,load_png,load_png_xy
 from life import *
 import os
 import s3_data
@@ -71,12 +71,16 @@ def test_png():
     scr = Screen()
     scr.clr()
 
-    for f in os.listdir('spool'):
-        if f.endswith('.png'):
-            print("Showing {}".format(f))
-            img = load_png(os.path.join('spool', f))
-            scr.image(img, ij, clock.color_map_watch)
-            time.sleep(4)
+    while True:
+        for f in os.listdir('spool'):
+            if f.endswith('.png'):
+                print("Showing {}".format(f))
+                img = np.array(load_png_xy(os.path.join('spool', f)) * 0.5, dtype=np.uint8)
+                t = datetime.datetime.now().time()
+                watch = clock.make_analog_clock_dither(t)
+                buf = blit(img, watch, src_key=[0, 0, 0])
+                scr.image(buf, xy, clock.color_map_watch)
+                time.sleep(60)
 
 def test_game_of_life():
     scr = Screen()

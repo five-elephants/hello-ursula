@@ -19,7 +19,7 @@ def blit(dest, src, src_key=None, dest_key=None):
     return dest
 
 
-def load_png(filename, gamma=2.2):
+def load_png(filename):
     img = imread(filename, mode='RGB')
     rgb = np.array(img[:,:,0:3] / 255.0, dtype=np.float)
     #gamma_corrected = rgb ** gamma
@@ -43,4 +43,6 @@ def load_png(filename, gamma=2.2):
 
     return np.array(gamma_corrected * 255.0, dtype=np.uint8)
 
-
+def load_png_xy(filename):
+    img = load_png(filename)
+    return np.flip(np.swapaxes(img, 0, 1), 1)
