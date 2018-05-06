@@ -2,6 +2,8 @@ from screen import *
 import clock
 import datetime
 import time
+import numpy as np
+from blit import blit
 
 
 def test_border():
@@ -48,10 +50,15 @@ def test_watch():
     scr = Screen()
     scr.clr()
 
+    bg = np.zeros((17, 17, 3), dtype=np.uint8)
+    bg[:,:,0] = 10
+
     for hour in range(12):
         for minute in range(60):
             t = datetime.time(hour, minute)
-            img = clock.make_analog_clock_dither(t)
+            watch = clock.make_analog_clock_dither(t)
+            img = blit(bg, watch, src_key=np.array([0, 0, 0], dtype=np.uint8))
+            #img = blit(bg, watch)
             scr.image(img, xy, clock.color_map_watch)
             time.sleep(0.05)
 
