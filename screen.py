@@ -28,6 +28,10 @@ def xy(x, y):
 
     return rv
 
+def color_map_rgb(p):
+    return Color((0x00ff00 & p) >>  8,
+                 (0xff0000 & p) >> 16,
+                 (0x0000ff & p))
 
 class Screen(object):
     def __init__(self, brightness=80):
@@ -47,7 +51,7 @@ class Screen(object):
         self.screen.show()
 
     def image(self, bitmap, coord_transform, color_transform):
-        self.clr()
+        #self.clr()
         for a,row in enumerate(bitmap):
             for b,pixel in enumerate(row):
                 self.screen.setPixelColor(coord_transform(a, b), color_transform(pixel))

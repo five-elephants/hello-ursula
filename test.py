@@ -1,4 +1,7 @@
 from screen import *
+import clock
+import datetime
+import time
 
 
 def test_border():
@@ -36,15 +39,23 @@ def test_image():
             [ 0x123456, 0x123456, 0x123456, 0x123456, 0x123456, 0x123456, 0x123456, 0x123456, 0x123456, 0x123456, 0x123456, 0x123456, 0x123456, 0x123456, 0x123456, 0x123456, 0x123456 ],
         ]
 
-    def cmap(p):
-        return Color((0x00ff00 & p) >>  8,
-                     (0xff0000 & p) >> 16,
-                     (0x0000ff & p))
-
     scr = Screen()
     scr.clr()
-    scr.image(image, xy, cmap)
+    scr.image(image, xy, color_map_rgb)
+
+
+def test_watch():
+    scr = Screen()
+    scr.clr()
+
+    for hour in range(12):
+        for minute in range(60):
+            t = datetime.time(hour, minute)
+            img = clock.make_analog_clock_dither(t)
+            scr.image(img, xy, clock.color_map_watch)
+            time.sleep(0.05)
 
 if __name__ == '__main__':
     #test_border()
-    test_image()
+    #test_image()
+    test_watch()
