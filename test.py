@@ -4,6 +4,7 @@ import datetime
 import time
 import numpy as np
 from blit import blit,load_png
+from life import *
 
 
 def test_border():
@@ -68,8 +69,35 @@ def test_png():
     img = load_png('test.png')
     scr.image(img, ij, clock.color_map_watch)
 
+def test_game_of_life():
+    scr = Screen()
+    scr.clr()
+
+    life = Life()
+
+    last_t = time.time()
+    while True:
+        t = datetime.datetime.now().time()
+        watch = clock.make_analog_clock_dither(t)
+
+        cur_t = time.time()
+        if cur_t - last_t > 1.0:
+            life.step()
+            if life.is_extinct() or life.static or life.n_step > 100:
+                life = Life()
+
+            bg = life.render_transition(0.0)
+            last_t = cur_t
+        else:
+            bg = life.render_transition(cur_t - last_t)
+
+        img = blit(bg, watch, src_key=[0, 0, 0])
+        scr.image(img, xy, clock.color_map_watch)
+        time.sleep(1.0/60.0)
+
 if __name__ == '__main__':
     #test_border()
     #test_image()
     #test_watch()
-    test_png()
+    #test_png()
+    test_game_of_life()
