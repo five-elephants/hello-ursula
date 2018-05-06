@@ -28,6 +28,9 @@ def xy(x, y):
 
     return rv
 
+def ij(i, j):
+    return xy(j, SCREEN_SZ_Y - i -1)
+
 def color_map_rgb(p):
     return Color((0x00ff00 & p) >>  8,
                  (0xff0000 & p) >> 16,

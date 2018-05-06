@@ -3,7 +3,7 @@ import clock
 import datetime
 import time
 import numpy as np
-from blit import blit
+from blit import blit,load_png
 
 
 def test_border():
@@ -62,7 +62,14 @@ def test_watch():
             scr.image(img, xy, clock.color_map_watch)
             time.sleep(0.05)
 
+def test_png():
+    scr = Screen()
+    scr.clr()
+    img = load_png('test.png')
+    scr.image(img, ij, clock.color_map_watch)
+
 if __name__ == '__main__':
     #test_border()
     #test_image()
-    test_watch()
+    #test_watch()
+    test_png()
