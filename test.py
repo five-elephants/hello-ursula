@@ -88,13 +88,14 @@ def test_game_of_life():
 
     life = Life()
 
+    step_t = 0.6
     last_t = time.time()
     while True:
         t = datetime.datetime.now().time()
         watch = clock.make_analog_clock_dither(t)
 
         cur_t = time.time()
-        if cur_t - last_t > 1.0:
+        if cur_t - last_t > step_t:
             life.step()
             if life.is_extinct() or life.static or life.n_step > 100:
                 life = Life()
@@ -102,7 +103,7 @@ def test_game_of_life():
             bg = life.render_transition(0.0)
             last_t = cur_t
         else:
-            bg = life.render_transition(cur_t - last_t)
+            bg = life.render_transition((cur_t - last_t) / step_t)
 
         img = blit(bg, watch, src_key=[0, 0, 0])
         scr.image(img, xy, clock.color_map_watch)

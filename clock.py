@@ -33,7 +33,7 @@ def make_analog_clock_dither(t):
     face = np.zeros((17, 17, 3), dtype=np.uint8)
 
     # hour hand
-    for r in np.linspace(0.0, 8.0, 10):
+    for r in np.linspace(0.0, 5.0, 10):
         phi = (float(t.hour * 60 + t.minute) / (12.0 * 60.0)) * 2.0 * math.pi
         x = r * math.sin(phi) + 8.0
         y = r * math.cos(phi) + 8.0
@@ -49,7 +49,7 @@ def make_analog_clock_dither(t):
             face[int(ix), int(iy)] = np.clip(val, 0, 255)
 
     # minute hand
-    for r in np.linspace(0.0, 6.0, 10):
+    for r in np.linspace(0.0, 8.0, 10):
         phi = (float(t.minute) / 60.0) * 2.0 * math.pi
         x = r * math.sin(phi) + 8.0
         y = r * math.cos(phi) + 8.0
