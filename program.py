@@ -45,6 +45,21 @@ class StaticImgMode(object):
         img = blit(self.bg_img, img_clock, src_key=[0, 0, 0])
         return img
 
+class S3ImgMode(StaticImgMode):
+    def __init__(self, directory):
+        super(S3ImgMode, self).__init__(directory)
+
+        self.download_every = datetime.timedelta(minutes=10)
+        self.last_download = datetime.datetime.now()
+        download_all_to(self.directory)
+
+    def step(self, dt):
+        if datetime.datetime.now() > self.last_download + self.download_every:
+            download_all_to(self.directory)
+            self.last_download = datetime.datetime.now()
+
+        super(S3ImgMode, self).step(dt)
+
 
 
 class Program(object):
@@ -62,8 +77,9 @@ class Program(object):
         self.scr.clr()
 
         self.modes = [
-                LifeMode(),
-                StaticImgMode('img'),
+                #LifeMode(),
+                #StaticImgMode('img'),
+                S3ImgMode('spool'),
             ]
 
     def run_mode(self, mode, until):
