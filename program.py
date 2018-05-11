@@ -11,10 +11,16 @@ import datetime
 import time
 import os
 import random
+import ConfigParser
 
 class LifeMode(object):
-    def __init__(self):
-        self.step_dt = 0.6
+    def __init__(self, cfg):
+        if not cfg is None:
+            self.step_dt = cfg.getfloat('LifeMode', 'step_dt')
+            self.max_steps = cfg.getint('LifeMode', 'max_steps')
+        else:
+            self.step_dt = 0.6
+            self.max_steps = 100
         self.life = Life()
         self.step(0.0)
 
@@ -22,7 +28,7 @@ class LifeMode(object):
         #print("Step {}".format(dt))
         self.img_clock = make_analog_clock_dither(datetime.datetime.now().time())
         self.life.step()
-        if self.life.is_extinct() or self.life.static or self.life.n_step > 100:
+        if self.life.is_extinct() or self.life.static or self.life.n_step > self.max_steps:
             self.life = Life()
 
     def render(self, dt):
@@ -31,8 +37,11 @@ class LifeMode(object):
         return img
 
 class StaticImgMode(object):
-    def __init__(self, directory):
-        self.step_dt = 4.0
+    def __init__(self, directory, cfg):
+        if not cfg is None:
+            self.step_dt = cfg.getfloat('StaticImgMode', 'step_dt')
+        else:
+            self.step_dt = 4.0
         self.directory = directory
         self.rng = random.Random()
 
@@ -48,10 +57,13 @@ class StaticImgMode(object):
         return img
 
 class S3ImgMode(StaticImgMode):
-    def __init__(self, directory):
-        super(S3ImgMode, self).__init__(directory)
+    def __init__(self, directory, cfg):
+        super(S3ImgMode, self).__init__(directory, cfg)
 
-        self.download_every = datetime.timedelta(minutes=10)
+        if not cfg is None:
+            self.download_every = datetime.timedelta(minutes=cfg.getint('S3ImgMode', 'download_every'))
+        else:
+            self.download_every = datetime.timedelta(minutes=10)
         self.last_download = datetime.datetime.now()
         download_all_to(self.directory)
 
@@ -65,13 +77,17 @@ class S3ImgMode(StaticImgMode):
 
 
 class Program(object):
-    def __init__(self):
+    def __init__(self, cfg_file='program.cfg'):
+        self.cfg = ConfigParser.ConfigParser()
+        self.cfg.readfp(open(cfg_file))
+
         # configuration
-        self.duration_secs = (10, 60)
-        self.ambient_light_control = True
-        self.light_control_dt = 2.0
-        self.light_control_kp = 2.0
-        self.light_control_range = (10, 128)
+        self.refresh_dt = 1.0/ self.cfg.getfloat('Program', 'refresh_rate')
+        self.duration_secs = (self.cfg.getint('Program', 'duration_min'), self.cfg.getint('Program', 'duration_max'))
+        self.ambient_light_control = self.cfg.getboolean('LightControl', 'ambient_light_control')
+        self.light_control_dt = self.cfg.getfloat('LightControl', 'dt')
+        self.light_control_kp = self.cfg.getfloat('LightControl', 'kp')
+        self.light_control_range = (self.cfg.getint('LightControl', 'min'), self.cfg.getint('LightControl', 'max'))
 
         self.rng = random.Random()
         self.sense_light = LightSensor()
@@ -79,9 +95,9 @@ class Program(object):
         self.scr.clr()
 
         self.modes = [
-                #LifeMode(),
-                #StaticImgMode('img'),
-                S3ImgMode('spool'),
+                LifeMode(self.cfg),
+                StaticImgMode('img', self.cfg),
+                S3ImgMode('spool', self.cfg),
             ]
 
     def run_mode(self, mode, until):
@@ -115,6 +131,8 @@ class Program(object):
             print('Selecting mode {} for {} seconds'.format(sel_mode_i, sel_duration_sec))
             self.run_mode(self.modes[sel_mode_i],
                           datetime.datetime.now() + datetime.timedelta(seconds=sel_duration_sec))
+
+            time.sleep(self.refresh_dt)
 
 
 
