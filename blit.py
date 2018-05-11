@@ -53,6 +53,8 @@ def load_png_xy(filename):
 def text(txt, color, scroll=0.0):
     font = ImageFont.truetype('5x5_pixel.ttf', size=7)
     img_size = font.getsize(txt)
+    img_size = (max(screen.SCREEN_SZ_X, img_size[0]),
+                max(screen.SCREEN_SZ_Y, img_size[1]))
     img = Image.new('RGB', img_size, (0, 0, 0))
     d = ImageDraw.Draw(img)
     d.text((0, 0), txt, color, font)
@@ -61,4 +63,5 @@ def text(txt, color, scroll=0.0):
     num_screens = (img_size[0] / screen.SCREEN_SZ_X)
     off = int(scroll * screen.SCREEN_SZ_X)
 
-    return num_screens, bmp[off:off+screen.SCREEN_SZ_X,:,:]
+    #return num_screens, bmp[off:off+screen.SCREEN_SZ_X,:,:]
+    return num_screens, bmp

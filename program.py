@@ -12,6 +12,8 @@ import time
 import os
 import random
 import ConfigParser
+import json
+import string
 
 class LifeMode(object):
     def __init__(self, cfg):
@@ -62,8 +64,10 @@ class S3ImgMode(StaticImgMode):
 
         if not cfg is None:
             self.download_every = datetime.timedelta(minutes=cfg.getint('S3ImgMode', 'download_every'))
+            self.text_scroll_speed = cfg.getfloat('S3ImgMode', 'text_scroll_speed')
         else:
             self.download_every = datetime.timedelta(minutes=10)
+            self.text_scoll_speed = 0.2
         self.last_download = datetime.datetime.now()
         download_all_to(self.directory)
 
@@ -72,7 +76,51 @@ class S3ImgMode(StaticImgMode):
             download_all_to(self.directory)
             self.last_download = datetime.datetime.now()
 
-        super(S3ImgMode, self).step(dt)
+        def f(x):
+            if x.endswith('.png'):
+                key = string.split(x, '.')[0]
+                meta_fn = os.path.join(self.directory, 'meta_{}.json'.format(key))
+                if os.path.exists(meta_fn):
+                    return True
+            return False
+
+
+        #lst = filter(lambda x: x.endswith('.png'), os.listdir(self.directory))
+        lst = filter(f, os.listdir(self.directory))
+        fn = lst[self.rng.randint(0, len(lst)-1)]
+        sel = os.path.join(self.directory, fn)
+        self.bg_img = load_png_xy(sel)
+
+        key = string.split(fn, '.')[0]
+        meta_fn = os.path.join(self.directory, 'meta_{}.json'.format(key))
+        if os.path.exists(meta_fn):
+            with open(meta_fn) as f:
+                data = json.load(f)
+            #s = "{}: {}".format(data['name'], data['message'])
+            s = data['message']
+            self.txt_n_screens, self.txt_img = text(s, (255, 0, 0))
+            self.txt_scroll = 0.0
+            self.have_message = True
+            print('Have a message: {}'.format(s))
+        else:
+            self.have_message = False
+
+        print('Selecting {}'.format(sel))
+
+    def render(self, dt):
+        img = super(S3ImgMode, self).render(dt)
+
+        if self.have_message:
+            off = int(self.txt_scroll * SCREEN_SZ_X)
+            print('scroll: {}/{} => {} [{}]'.format(self.txt_scroll, self.txt_n_screens, off, self.txt_img.shape))
+            if self.txt_img.shape[0] -off < SCREEN_SZ_X:
+                off = self.txt_img.shape[0] - SCREEN_SZ_X
+            img = blit(img, self.txt_img[off:off+SCREEN_SZ_X,:,:], src_key=[0, 0, 0])
+            self.txt_scroll = self.text_scroll_speed * dt
+            if self.txt_scroll > self.txt_n_screens + 1.0:
+                self.txt_scroll = 0.0
+
+        return img
 
 
 
