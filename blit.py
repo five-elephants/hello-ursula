@@ -1,5 +1,7 @@
 import numpy as np
 from scipy.ndimage import imread
+from PIL import Image, ImageDraw, ImageFont
+import screen
 
 
 def blit(dest, src, src_key=None, dest_key=None):
@@ -46,3 +48,17 @@ def load_png(filename):
 def load_png_xy(filename):
     img = load_png(filename)
     return np.flip(np.swapaxes(img, 0, 1), 1)
+
+
+def text(txt, color, scroll=0.0):
+    font = ImageFont.truetype('5x5_pixel.ttf', size=7)
+    img_size = font.getsize(txt)
+    img = Image.new('RGB', img_size, (0, 0, 0))
+    d = ImageDraw.Draw(img)
+    d.text((0, 0), txt, color, font)
+    bmp = np.array(img)
+    bmp = np.flip(np.swapaxes(img, 0, 1), 1)
+    num_screens = (img_size[0] / screen.SCREEN_SZ_X)
+    off = int(scroll * screen.SCREEN_SZ_X)
+
+    return num_screens, bmp[off:off+screen.SCREEN_SZ_X,:,:]

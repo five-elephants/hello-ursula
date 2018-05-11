@@ -77,7 +77,7 @@ class S3ImgMode(StaticImgMode):
 
 
 class Program(object):
-    def __init__(self, cfg_file='program.cfg'):
+    def __init__(self, cfg_file='dev.cfg'):
         self.cfg = ConfigParser.ConfigParser()
         self.cfg.readfp(open(cfg_file))
 
@@ -137,7 +137,7 @@ class Program(object):
 
 
 def run_it():
-    pg = Program()
+    pg = Program('prod.cfg')
     #pg.run_mode(pg.modes[1], datetime.datetime.now() + datetime.timedelta(seconds=10))
     pg.run()
     pg.scr.clr()
