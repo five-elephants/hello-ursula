@@ -7,6 +7,7 @@ from blit import blit,load_png,load_png_xy
 from life import *
 import os
 import s3_data
+import ambient
 
 
 def test_border():
@@ -109,9 +110,29 @@ def test_game_of_life():
         scr.image(img, xy, clock.color_map_watch)
         time.sleep(1.0/60.0)
 
+def test_light_control(kp=2.0):
+    brightness = 20
+
+    img = load_png_xy('spool/Sternennacht_17x17.png')
+    sense = ambient.LightSensor()
+
+    while True:
+        scr = Screen(brightness)
+        scr.image(img, xy, clock.color_map_watch)
+
+        time.sleep(1.0)
+
+        lum_sum, infra = sense.get_ambient_light()
+        lum = lum_sum - infra
+        brightness = max(0, min(255, int(kp * lum)))
+
+        print('lum = {}, brightness = {}'.format(lum, brightness))
+
+
 if __name__ == '__main__':
     #test_border()
     #test_image()
     #test_watch()
-    test_png()
+    #test_png()
     #test_game_of_life()
+    test_light_control()
