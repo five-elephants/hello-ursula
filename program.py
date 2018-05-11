@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 from screen import *
 from blit import *
 from life import *
