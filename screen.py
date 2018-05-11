@@ -43,6 +43,8 @@ class Screen(object):
                                         brightness = brightness)
         self.screen.begin()
 
+    def brightness(self, b):
+        self.screen.setBrightness(b)
 
     def clr(self, color=Color(0, 0, 0)):
         for i in range(self.screen.numPixels()):
