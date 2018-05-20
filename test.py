@@ -128,6 +128,20 @@ def test_light_control(kp=2.0):
 
         print('lum = {}, brightness = {}'.format(lum, brightness))
 
+def test_blit():
+    img_a = np.zeros((17, 17, 3), dtype=np.uint8)
+    img_b = np.zeros((17, 17, 3), dtype=np.uint8)
+
+
+    img_a[8,:,0] = 128
+    img_b[:,8,1] = 128
+
+    img = blit(img_a, img_b, src_key=[0, 0, 0])
+
+    scr = Screen()
+    scr.clr()
+    scr.image(img, xy, clock.color_map_watch)
+
 
 if __name__ == '__main__':
     #test_border()
@@ -135,4 +149,5 @@ if __name__ == '__main__':
     #test_watch()
     #test_png()
     #test_game_of_life()
-    test_light_control()
+    #test_light_control()
+    test_blit()

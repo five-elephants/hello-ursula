@@ -8,17 +8,22 @@ def blit(dest, src, src_key=None, dest_key=None):
     # Do not copy pixels with src_key value
     if not src_key is None:
         sel_src = src != src_key
+        sel_src = np.reshape(np.repeat(np.logical_or.reduce(sel_src, axis=2), 3), src.shape)
     else:
         sel_src = np.ones(src.shape, dtype=bool)
 
     # Overwrite pixels with dest_key value
     if not dest_key is None:
         sel_dest = dest == dest_key
+        sel_dest = np.logical_and.reduce(sel_dest, axis=2)
+        sel_dest = np.reshape(np.repeat(np.logical_and.reduce(sel_dest, axis=2), 3), dest.shape)
     else:
         sel_dest = np.ones(dest.shape, dtype=bool)
 
-    dest = np.where(np.logical_and(sel_src, sel_dest), src, dest)
-    return dest
+    #print("sel_src = {}\n\nsel_dest = {}".format(sel_src, sel_dest))
+
+    rv = np.where(np.logical_and(sel_src, sel_dest), src, dest)
+    return rv
 
 
 def load_png(filename):
