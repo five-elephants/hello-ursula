@@ -73,7 +73,7 @@ class S3ImgMode(StaticImgMode):
 
     def step(self, dt):
         if datetime.datetime.now() > self.last_download + self.download_every:
-            download_all_to(self.directory)
+            #download_all_to(self.directory)
             self.last_download = datetime.datetime.now()
 
         def f(x):
@@ -85,8 +85,8 @@ class S3ImgMode(StaticImgMode):
             return False
 
 
-        #lst = filter(lambda x: x.endswith('.png'), os.listdir(self.directory))
-        lst = filter(f, os.listdir(self.directory))
+        lst = filter(lambda x: x.endswith('.png'), os.listdir(self.directory))
+        #lst = filter(f, os.listdir(self.directory))
         fn = lst[self.rng.randint(0, len(lst)-1)]
         sel = os.path.join(self.directory, fn)
         self.bg_img = load_png_xy(sel)
