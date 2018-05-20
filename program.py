@@ -14,6 +14,7 @@ import random
 import ConfigParser
 import json
 import string
+import re
 
 class LifeMode(object):
     def __init__(self, cfg):
@@ -68,12 +69,13 @@ class S3ImgMode(StaticImgMode):
         else:
             self.download_every = datetime.timedelta(minutes=10)
             self.text_scoll_speed = 0.2
+        self.msg_fltr = re.compile(r'[^a-zA-Z0-9_\ ]+')
         self.last_download = datetime.datetime.now()
         download_all_to(self.directory)
 
     def step(self, dt):
         if datetime.datetime.now() > self.last_download + self.download_every:
-            #download_all_to(self.directory)
+            download_all_to(self.directory)
             self.last_download = datetime.datetime.now()
 
         def f(x):
@@ -85,8 +87,8 @@ class S3ImgMode(StaticImgMode):
             return False
 
 
-        lst = filter(lambda x: x.endswith('.png'), os.listdir(self.directory))
-        #lst = filter(f, os.listdir(self.directory))
+        #lst = filter(lambda x: x.endswith('.png'), os.listdir(self.directory))
+        lst = filter(f, os.listdir(self.directory))
         fn = lst[self.rng.randint(0, len(lst)-1)]
         sel = os.path.join(self.directory, fn)
         self.bg_img = load_png_xy(sel)
@@ -97,11 +99,11 @@ class S3ImgMode(StaticImgMode):
             with open(meta_fn) as f:
                 data = json.load(f)
             #s = "{}: {}".format(data['name'], data['message'])
-            s = data['message']
-            self.txt_n_screens, self.txt_img = text(s, (255, 0, 0))
+            s = self.msg_fltr.sub('', str(data['message']))
+            self.txt_n_screens, self.txt_img = text(s, (0, 255, 0), offset=(SCREEN_SZ_X, 0))
             self.txt_scroll = 0.0
             self.have_message = True
-            print('Have a message: {}'.format(s))
+            print("Have a message: '{}' by {}".format(s, data['name']))
         else:
             self.have_message = False
 
@@ -112,13 +114,12 @@ class S3ImgMode(StaticImgMode):
 
         if self.have_message:
             off = int(self.txt_scroll * SCREEN_SZ_X)
-            print('scroll: {}/{} => {} [{}]'.format(self.txt_scroll, self.txt_n_screens, off, self.txt_img.shape))
-            if self.txt_img.shape[0] -off < SCREEN_SZ_X:
-                off = self.txt_img.shape[0] - SCREEN_SZ_X
-            img = blit(img, self.txt_img[off:off+SCREEN_SZ_X,:,:], src_key=[0, 0, 0])
+            #print('scroll: {}/{} => {} [{}]'.format(self.txt_scroll, self.txt_n_screens, off, self.txt_img.shape))
+            img = blitxy(img, self.txt_img, (0, 12),
+                    src_rect=(off, 0, SCREEN_SZ_X, self.txt_img.shape[1]),
+                    src_key=[0, 0, 0])
             self.txt_scroll = self.text_scroll_speed * dt
-            if self.txt_scroll > self.txt_n_screens + 1.0:
-                self.txt_scroll = 0.0
+            self.txt_scroll -= self.txt_n_screens * math.floor(self.txt_scroll / self.txt_n_screens) 
 
         return img
 
