@@ -137,6 +137,8 @@ class Program(object):
         self.light_control_dt = self.cfg.getfloat('LightControl', 'dt')
         self.light_control_kp = self.cfg.getfloat('LightControl', 'kp')
         self.light_control_range = (self.cfg.getint('LightControl', 'min'), self.cfg.getint('LightControl', 'max'))
+        self.schedule = self.read_schedule(self.cfg.get('Program', 'schedule'))
+        print("Configured schedule: {}".format(self.schedule))
 
         self.rng = random.Random()
         self.sense_light = LightSensor()
@@ -148,6 +150,31 @@ class Program(object):
                 StaticImgMode('img', self.cfg),
                 S3ImgMode('spool', self.cfg),
             ]
+
+    def read_schedule(self, s):
+        rv = []
+        entries = string.split(s, ',')
+
+        for entry in entries:
+            a,b = string.split(entry, '-', maxsplit=1)
+            rv.append((datetime.datetime.strptime(a, '%H:%M').time(),
+                       datetime.datetime.strptime(b, '%H:%M').time()))
+
+        return rv
+
+
+    def check_schedule(self, t):
+        for x in self.schedule:
+            if t >= x[0] and t < x[1]:
+                return True
+        return False
+
+
+    def time_to_next_schedule(self, t):
+        schedule_dts = (datetime.datetime.combine(datetime.datetime.today(), i[0]) for i in self.schedule)
+        deltas = (i - t for i in schedule_dts)
+        return min(filter(lambda x: x >= datetime.timedelta(0), deltas))
+
 
     def run_mode(self, mode, until):
         last_t = 0.0
@@ -174,14 +201,21 @@ class Program(object):
 
     def run(self):
         while True:
-            sel_mode_i = self.rng.randint(0, len(self.modes)-1)
-            sel_duration_sec = self.rng.randint(self.duration_secs[0], self.duration_secs[1])
+            now = datetime.datetime.now()
+            if self.check_schedule(now.time()):
+                sel_mode_i = self.rng.randint(0, len(self.modes)-1)
+                sel_duration_sec = self.rng.randint(self.duration_secs[0], self.duration_secs[1])
 
-            print('Selecting mode {} for {} seconds'.format(sel_mode_i, sel_duration_sec))
-            self.run_mode(self.modes[sel_mode_i],
-                          datetime.datetime.now() + datetime.timedelta(seconds=sel_duration_sec))
+                print('Selecting mode {} for {} seconds'.format(sel_mode_i, sel_duration_sec))
+                self.run_mode(self.modes[sel_mode_i],
+                              datetime.datetime.now() + datetime.timedelta(seconds=sel_duration_sec))
 
-            time.sleep(self.refresh_dt)
+                time.sleep(self.refresh_dt)
+            else:
+                self.scr.clr()
+                dt = self.time_to_next_schedule(now).seconds
+                print('Sleeping for {} seconds'.format(dt))
+                time.sleep(dt)
 
 
 
