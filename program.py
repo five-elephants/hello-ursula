@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 from screen import *
 from blit import *
@@ -228,8 +228,8 @@ class Program(object):
 
 
 def run_it():
-    #pg = Program('prod.cfg')
-    pg = Program('dev.cfg')
+    pg = Program('prod.cfg')
+    #pg = Program('dev.cfg')
     #pg.run_mode(pg.modes[1], datetime.now() + timedelta(seconds=10))
     pg.run()
     pg.scr.clr()
