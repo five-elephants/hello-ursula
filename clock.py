@@ -1,10 +1,9 @@
 from datetime import time
 import numpy as np
-from screen import Color
 import math
 
 def color_map_watch(p):
-    return Color(p[1], p[0], p[2])
+    return (p[1], p[0], p[2])
 
 def make_analog_clock(t):
     face = np.zeros((17, 17, 3), dtype=np.uint8)

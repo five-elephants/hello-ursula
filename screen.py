@@ -1,6 +1,7 @@
+import board
 from neopixel import *
 
-LED_PIN = 18
+LED_PIN = board.D18
 
 OFFSCREEN_COUNT = 1
 SCREEN_SZ_X = 17
@@ -32,34 +33,38 @@ def ij(i, j):
     return xy(j, SCREEN_SZ_Y - i -1)
 
 def color_map_rgb(p):
-    return Color((0x00ff00 & p) >>  8,
-                 (0xff0000 & p) >> 16,
-                 (0x0000ff & p))
+    return ((0x00ff00 & p) >>  8,
+            (0xff0000 & p) >> 16,
+            (0x0000ff & p))
 
 class Screen(object):
     def __init__(self, brightness=80):
-        self.screen = Adafruit_NeoPixel(num = OFFSCREEN_COUNT + (SCREEN_SZ_X * SCREEN_SZ_Y),
-                                        pin = LED_PIN,
-                                        brightness = brightness)
-        self.screen.begin()
+        self.screen = NeoPixel(n = OFFSCREEN_COUNT + (SCREEN_SZ_X * SCREEN_SZ_Y),
+                               pin = LED_PIN,
+                               brightness = int(brightness),
+                               auto_write = False,
+                               pixel_order = RGB)
+        #self.screen.begin()
 
     def brightness(self, b):
         self.screen.setBrightness(b)
 
-    def clr(self, color=Color(0, 0, 0)):
-        for i in range(self.screen.numPixels()):
-            self.screen.setPixelColor(i, color)
+    def clr(self, color=(0, 0, 0)):
+        for i in range(self.screen.n):
+            #self.screen.setPixelColor(i, color)
+            self.screen[i] = color
         self.screen.show()
 
     def set(self, i, color):
-        self.screen.setPixelColor(i, color)
+        self.screen[i] = color
         self.screen.show()
 
     def image(self, bitmap, coord_transform, color_transform):
         #self.clr()
         for a,row in enumerate(bitmap):
             for b,pixel in enumerate(row):
-                self.screen.setPixelColor(coord_transform(a, b), color_transform(pixel))
+                #self.screen.setPixelColor(coord_transform(a, b), color_transform(pixel))
+                self.screen[coord_transform(a, b)] = color_transform(pixel)
         self.screen.show()
 
     def show(self):

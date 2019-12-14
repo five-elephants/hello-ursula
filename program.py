@@ -7,14 +7,15 @@ from clock import *
 from s3_data import *
 from ambient import *
 
-import datetime
+from datetime import datetime,timedelta
 import time
 import os
 import random
-import ConfigParser
+import configparser 
 import json
 import string
 import re
+from itertools import chain
 
 class LifeMode(object):
     def __init__(self, cfg):
@@ -29,7 +30,7 @@ class LifeMode(object):
 
     def step(self, dt):
         #print("Step {}".format(dt))
-        self.img_clock = make_analog_clock_dither(datetime.datetime.now().time())
+        self.img_clock = make_analog_clock_dither(datetime.now().time())
         self.life.step()
         if self.life.is_extinct() or self.life.static or self.life.n_step > self.max_steps:
             self.life = Life()
@@ -49,13 +50,13 @@ class StaticImgMode(object):
         self.rng = random.Random()
 
     def step(self, dt):
-        lst = filter(lambda x: x.endswith('.png'), os.listdir(self.directory))
+        lst = list(filter(lambda x: x.endswith('.png'), os.listdir(self.directory)))
         sel = os.path.join(self.directory, lst[self.rng.randint(0, len(lst)-1)])
         self.bg_img = load_png_xy(sel)
         print('Selecting {}'.format(sel))
 
     def render(self, dt):
-        img_clock = make_analog_clock_dither(datetime.datetime.now().time())
+        img_clock = make_analog_clock_dither(datetime.now().time())
         img = blit(self.bg_img, img_clock, src_key=[0, 0, 0])
         return img
 
@@ -64,23 +65,23 @@ class S3ImgMode(StaticImgMode):
         super(S3ImgMode, self).__init__(directory, cfg)
 
         if not cfg is None:
-            self.download_every = datetime.timedelta(minutes=cfg.getint('S3ImgMode', 'download_every'))
+            self.download_every = timedelta(minutes=cfg.getint('S3ImgMode', 'download_every'))
             self.text_scroll_speed = cfg.getfloat('S3ImgMode', 'text_scroll_speed')
         else:
-            self.download_every = datetime.timedelta(minutes=10)
+            self.download_every = timedelta(minutes=10)
             self.text_scoll_speed = 0.2
         self.msg_fltr = re.compile(r'[^a-zA-Z0-9_\ ]+')
-        self.last_download = datetime.datetime.now()
+        self.last_download = datetime.now()
         download_all_to(self.directory)
 
     def step(self, dt):
-        if datetime.datetime.now() > self.last_download + self.download_every:
+        if datetime.now() > self.last_download + self.download_every:
             download_all_to(self.directory)
-            self.last_download = datetime.datetime.now()
+            self.last_download = datetime.now()
 
         def f(x):
             if x.endswith('.png'):
-                key = string.split(x, '.')[0]
+                key = x.split('.')[0]
                 meta_fn = os.path.join(self.directory, 'meta_{}.json'.format(key))
                 if os.path.exists(meta_fn):
                     return True
@@ -88,14 +89,15 @@ class S3ImgMode(StaticImgMode):
 
 
         #lst = filter(lambda x: x.endswith('.png'), os.listdir(self.directory))
-        lst = filter(f, os.listdir(self.directory))
+        lst = list(filter(f, os.listdir(self.directory)))
         fn = lst[self.rng.randint(0, len(lst)-1)]
         sel = os.path.join(self.directory, fn)
         self.bg_img = load_png_xy(sel)
 
-        key = string.split(fn, '.')[0]
+        key = fn.split('.')[0]
         meta_fn = os.path.join(self.directory, 'meta_{}.json'.format(key))
         if os.path.exists(meta_fn):
+            print("Loading meta '{}'".format(meta_fn))
             with open(meta_fn) as f:
                 data = json.load(f)
             #s = "{}: {}".format(data['name'], data['message'])
@@ -127,7 +129,7 @@ class S3ImgMode(StaticImgMode):
 
 class Program(object):
     def __init__(self, cfg_file='dev.cfg'):
-        self.cfg = ConfigParser.ConfigParser()
+        self.cfg = configparser.ConfigParser()
         self.cfg.readfp(open(cfg_file))
 
         # configuration
@@ -137,12 +139,13 @@ class Program(object):
         self.light_control_dt = self.cfg.getfloat('LightControl', 'dt')
         self.light_control_kp = self.cfg.getfloat('LightControl', 'kp')
         self.light_control_range = (self.cfg.getint('LightControl', 'min'), self.cfg.getint('LightControl', 'max'))
+        self.default_brightness = self.cfg.getint('LightControl', 'default_brightness')
         self.schedule = self.read_schedule(self.cfg.get('Program', 'schedule'))
         print("Configured schedule: {}".format(self.schedule))
 
         self.rng = random.Random()
         self.sense_light = LightSensor()
-        self.scr = Screen()
+        self.scr = Screen(brightness=self.default_brightness)
         self.scr.clr()
 
         self.modes = [
@@ -153,12 +156,12 @@ class Program(object):
 
     def read_schedule(self, s):
         rv = []
-        entries = string.split(s, ',')
+        entries = s.split(',')
 
         for entry in entries:
-            a,b = string.split(entry, '-', maxsplit=1)
-            rv.append((datetime.datetime.strptime(a, '%H:%M').time(),
-                       datetime.datetime.strptime(b, '%H:%M').time()))
+            a,b = entry.split('-', maxsplit=1)
+            rv.append((datetime.strptime(a, '%H:%M').time(),
+                       datetime.strptime(b, '%H:%M').time()))
 
         return rv
 
@@ -171,17 +174,22 @@ class Program(object):
 
 
     def time_to_next_schedule(self, t):
-        schedule_dts = (datetime.datetime.combine(datetime.datetime.today(), i[0]) for i in self.schedule)
+        schedule_dts_today = (datetime.combine(datetime.today(), i[0]) for i in self.schedule)
+        tomorrow = datetime.today() + timedelta(days=1)
+        schedule_dts_tomorrow = (datetime.combine(tomorrow, i[0]) for i in self.schedule)
+        schedule_dts = chain(schedule_dts_today, schedule_dts_tomorrow)
+
         deltas = (i - t for i in schedule_dts)
-        return min(filter(lambda x: x >= datetime.timedelta(0), deltas))
+        return min(filter(lambda x: x >= timedelta(0), deltas))
 
 
     def run_mode(self, mode, until):
         last_t = 0.0
         last_lc_t = 0.0
-        while datetime.datetime.now() < until:
+        while datetime.now() < until:
             cur_t = time.time()
 
+            #print("cur_t = {:03.2}, last_t = {:03.2}, step_dt = {:03.2}, cur_t - last_t = {}".format(cur_t, last_t, mode.step_dt, cur_t - last_t))
             if cur_t - last_t > mode.step_dt:
                 mode.step(cur_t - last_t)
                 last_t = cur_t
@@ -201,14 +209,14 @@ class Program(object):
 
     def run(self):
         while True:
-            now = datetime.datetime.now()
+            now = datetime.now()
             if self.check_schedule(now.time()):
                 sel_mode_i = self.rng.randint(0, len(self.modes)-1)
                 sel_duration_sec = self.rng.randint(self.duration_secs[0], self.duration_secs[1])
 
                 print('Selecting mode {} for {} seconds'.format(sel_mode_i, sel_duration_sec))
                 self.run_mode(self.modes[sel_mode_i],
-                              datetime.datetime.now() + datetime.timedelta(seconds=sel_duration_sec))
+                              datetime.now() + timedelta(seconds=sel_duration_sec))
 
                 time.sleep(self.refresh_dt)
             else:
@@ -220,8 +228,9 @@ class Program(object):
 
 
 def run_it():
-    pg = Program('prod.cfg')
-    #pg.run_mode(pg.modes[1], datetime.datetime.now() + datetime.timedelta(seconds=10))
+    #pg = Program('prod.cfg')
+    pg = Program('dev.cfg')
+    #pg.run_mode(pg.modes[1], datetime.now() + timedelta(seconds=10))
     pg.run()
     pg.scr.clr()
 

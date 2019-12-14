@@ -14,7 +14,7 @@ def test_border():
     scr = Screen()
     scr.clr()
 
-    c = Color(20, 0, 0)
+    c = (20, 0, 0)
 
     for x in range(17):
         scr.set(xy(x, 0), c)
